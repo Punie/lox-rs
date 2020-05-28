@@ -1,0 +1,15 @@
+[package]
+name = "lox-rs"
+version = "0.1.0"
+authors = ["Hugo Saracino <hugo.saracino@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "lox"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lox"
+path = "src/bin/lox.rs"
+
+[dependencies]
