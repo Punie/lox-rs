@@ -3,6 +3,11 @@ use std::fmt;
 #[derive(Clone, Copy, Debug)]
 pub enum OpCode {
     Constant(usize),
+    Add,
+    Substract,
+    Multiply,
+    Divide,
+    Negate,
     Return,
 }
 
@@ -21,8 +26,8 @@ impl fmt::Display for Value {
 
 #[derive(Clone, Debug)]
 pub struct Chunk {
-    code: Vec<OpCode>,
-    constants: Vec<Value>,
+    pub code: Vec<OpCode>,
+    pub constants: Vec<Value>,
     lines: Vec<usize>,
 }
 
@@ -48,19 +53,31 @@ impl Chunk {
     pub fn disassemble(&self, name: &str) {
         println!("== {} == ", name);
 
-        for (idx, op_code) in self.code.iter().enumerate() {
-            print!("{:04} ", idx);
-
-            if idx > 0 && self.lines[idx] == self.lines[idx - 1] {
-                print!("   | ");
-            } else {
-                print!("{:4} ", self.lines[idx]);
-            }
-
-            match *op_code {
-                OpCode::Return => println!("OP_RETURN"),
-                OpCode::Constant(idx) => println!("{:-16} {:4} '{}'", "OP_CONSTANT", idx, self.constants[idx]),
-            }
+        for offset in 0..self.code.len() {
+            disassemble_instruction(self, offset);
         }
+    }
+}
+
+pub fn disassemble_instruction(chunk: &Chunk, offset: usize) {
+    print!("{:04} ", offset);
+
+    if offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1] {
+        print!("   | ");
+    } else {
+        print!("{:4} ", chunk.lines[offset]);
+    }
+
+    match chunk.code[offset] {
+        OpCode::Constant(offset) => println!(
+            "{:-16} {:4} '{}'",
+            "OP_CONSTANT", offset, chunk.constants[offset]
+        ),
+        OpCode::Add => println!("OP_ADD"),
+        OpCode::Substract => println!("OP_SUBSTRACT"),
+        OpCode::Multiply => println!("OP_MULTIPLY"),
+        OpCode::Divide => println!("OP_DIVIDE"),
+        OpCode::Negate => println!("OP_NEGATE"),
+        OpCode::Return => println!("OP_RETURN"),
     }
 }

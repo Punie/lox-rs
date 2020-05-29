@@ -11,7 +11,18 @@ $ cargo run --bin lox
 
 If all goes well, you should see the following output:
 ```
-== test chunk ==
-0000  123 OP_CONSTANT         0 '42'
-0001    | OP_RETURN
+0000  123 OP_CONSTANT         0 '1.2'
+          [ 1.2 ]
+0001    | OP_CONSTANT         1 '3.4'
+          [ 1.2 ][ 3.4 ]
+0002    | OP_ADD
+          [ 4.6 ]
+0003    | OP_CONSTANT         2 '5.6'
+          [ 4.6 ][ 5.6 ]
+0004    | OP_DIVIDE
+          [ 0.8214285714285714 ]
+0005    | OP_NEGATE
+          [ -0.8214285714285714 ]
+0006    | OP_RETURN
+-0.8214285714285714
 ```
