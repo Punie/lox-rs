@@ -1,19 +1,42 @@
-use std::{error, fmt};
+use std::{convert::From, error, fmt};
 
 use crate::bytecode::{disassemble_instruction, Chunk, OpCode, Value};
 
 #[derive(Clone, Copy, Debug)]
 pub enum InterpretError {
     CompileError,
-    RuntimeError,
+    RuntimeError(RuntimeError),
 }
 
 impl fmt::Display for InterpretError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             InterpretError::CompileError => write!(f, "compile error"),
-            InterpretError::RuntimeError => write!(f, "runtime error"),
+            InterpretError::RuntimeError(err) => write!(f, "runtime error: {}", err),
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum RuntimeError {
+    InvalidChunkError,
+    StackUnderflow,
+    TypeError,
+}
+
+impl fmt::Display for RuntimeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            RuntimeError::InvalidChunkError => write!(f, "malformed chunk"),
+            RuntimeError::StackUnderflow => write!(f, "stack underflow"),
+            RuntimeError::TypeError => write!(f, "type error"),
+        }
+    }
+}
+
+impl From<RuntimeError> for InterpretError {
+    fn from(error: RuntimeError) -> InterpretError {
+        InterpretError::RuntimeError(error)
     }
 }
 
@@ -46,37 +69,40 @@ impl Vm {
                 for slot in &self.stack {
                     print!("[ {} ]", slot);
                 }
-                println!("");
+                println!();
                 disassemble_instruction(&self.chunk, self.program_counter)
             }
 
             self.program_counter += 1;
 
+            macro_rules! binary_op {
+                ($op:tt) => {{
+                    match (self.pop_stack()?, self.pop_stack()?) {
+                        (Value::Number(b), Value::Number(a)) => self.push_stack(Value::Number(a $op b)),
+                    }
+                }};
+            }
+
             match instruction {
                 OpCode::Constant(idx) => {
-                    let constant = self.chunk.constants[idx];
-                    self.stack.push(constant);
+                    let constant = self
+                        .chunk
+                        .constant_at(idx)
+                        .ok_or(RuntimeError::InvalidChunkError)?;
+                    self.push_stack(constant);
                 }
-                OpCode::Add => match (self.pop()?, self.pop()?) {
-                    (Value::Number(b), Value::Number(a)) => self.stack.push(Value::Number(a + b)),
-                },
-                OpCode::Substract => match (self.pop()?, self.pop()?) {
-                    (Value::Number(b), Value::Number(a)) => self.stack.push(Value::Number(a - b)),
-                },
-                OpCode::Multiply => match (self.pop()?, self.pop()?) {
-                    (Value::Number(b), Value::Number(a)) => self.stack.push(Value::Number(a * b)),
-                },
-                OpCode::Divide => match (self.pop()?, self.pop()?) {
-                    (Value::Number(b), Value::Number(a)) => self.stack.push(Value::Number(a / b)),
-                },
+                OpCode::Add => binary_op!(+),
+                OpCode::Substract => binary_op!(-),
+                OpCode::Multiply => binary_op!(*),
+                OpCode::Divide => binary_op!(/),
                 OpCode::Negate => {
-                    let value = self.stack.pop().ok_or(InterpretError::RuntimeError)?;
+                    let value = self.pop_stack()?;
                     match value {
-                        Value::Number(val) => self.stack.push(Value::Number(-val)),
+                        Value::Number(val) => self.push_stack(Value::Number(-val)),
                     }
                 }
                 OpCode::Return => {
-                    let value = self.stack.pop().unwrap();
+                    let value = self.pop_stack()?;
                     println!("{}", value);
                     return Ok(());
                 }
@@ -84,7 +110,11 @@ impl Vm {
         }
     }
 
-    fn pop(&mut self) -> Result<Value, InterpretError> {
-        self.stack.pop().ok_or(InterpretError::RuntimeError)
+    fn pop_stack(&mut self) -> Result<Value, RuntimeError> {
+        self.stack.pop().ok_or(RuntimeError::StackUnderflow)
+    }
+
+    fn push_stack(&mut self, value: Value) {
+        self.stack.push(value);
     }
 }

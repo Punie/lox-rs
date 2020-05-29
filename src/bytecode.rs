@@ -24,7 +24,7 @@ impl fmt::Display for Value {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Chunk {
     pub code: Vec<OpCode>,
     pub constants: Vec<Value>,
@@ -43,6 +43,14 @@ impl Chunk {
     pub fn write(&mut self, op_code: OpCode, line: usize) {
         self.code.push(op_code);
         self.lines.push(line);
+    }
+
+    pub fn code_at(&self, offset: usize) -> Option<OpCode> {
+        self.code.get(offset).cloned()
+    }
+
+    pub fn constant_at(&self, offset: usize) -> Option<Value> {
+        self.constants.get(offset).cloned()
     }
 
     pub fn push_constant(&mut self, value: Value) -> usize {

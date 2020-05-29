@@ -23,6 +23,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     chunk.write(OpCode::Negate, 123);
     chunk.write(OpCode::Return, 123);
 
+    // By that point, `chunk` should represent the expression
+    // `return -((1.2 + 3.4) / 5.6);`
+
     let mut vm = Vm::init(chunk);
     vm.interpret()?;
 
