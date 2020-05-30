@@ -1,33 +1,64 @@
-use std::error::Error;
-
-use lox::{
-    bytecode::{Chunk, OpCode, Value},
-    vm::Vm,
+use std::{
+    error::Error,
+    fs, io,
+    path::{Path, PathBuf},
 };
 
+use rustyline::{error::ReadlineError, Editor};
+use structopt::StructOpt;
+
+use lox::compiler::compile;
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "lox")]
+struct CommandLineArgs {
+    /// Lox source file
+    file: Option<PathBuf>,
+}
+
+fn repl() {
+    let mut rl = Editor::<()>::new();
+
+    loop {
+        let readline = rl.readline(">> ");
+
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str());
+                compile(&line);
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+        }
+    }
+}
+
+fn run_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
+    let source = fs::read_to_string(path)?;
+
+    compile(&source);
+
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut chunk = Chunk::new();
+    let args = CommandLineArgs::from_args();
 
-    let value = chunk.push_constant(Value::Number(1.2));
-    chunk.write(OpCode::Constant(value), 123);
-
-    let value = chunk.push_constant(Value::Number(3.4));
-    chunk.write(OpCode::Constant(value), 123);
-
-    chunk.write(OpCode::Add, 123);
-
-    let value = chunk.push_constant(Value::Number(5.6));
-    chunk.write(OpCode::Constant(value), 123);
-
-    chunk.write(OpCode::Divide, 123);
-    chunk.write(OpCode::Negate, 123);
-    chunk.write(OpCode::Return, 123);
-
-    // By that point, `chunk` should represent the expression
-    // `return -((1.2 + 3.4) / 5.6);`
-
-    let mut vm = Vm::init(chunk);
-    vm.interpret()?;
+    if let Some(path) = args.file {
+        run_file(path)?;
+    } else {
+        repl();
+    }
 
     Ok(())
 }

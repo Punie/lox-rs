@@ -4,25 +4,11 @@ https://craftinginterpreters.com/.
 
 ## Run Lox
 
-You can run Lox with the following command:
+You can either run the lox REPL or interpret a source file directly:
 ```sh
-$ cargo run --bin lox
+$ cargo run --bin lox               # REPL
+$ cargo run --bin lox -- <FILE>     # Run file
 ```
 
-If all goes well, you should see the following output:
-```
-0000  123 OP_CONSTANT         0 '1.2'
-          [ 1.2 ]
-0001    | OP_CONSTANT         1 '3.4'
-          [ 1.2 ][ 3.4 ]
-0002    | OP_ADD
-          [ 4.6 ]
-0003    | OP_CONSTANT         2 '5.6'
-          [ 4.6 ][ 5.6 ]
-0004    | OP_DIVIDE
-          [ 0.8214285714285714 ]
-0005    | OP_NEGATE
-          [ -0.8214285714285714 ]
-0006    | OP_RETURN
--0.8214285714285714
-```
+At the moment, in both those modes, lox only converts the source into a Token
+stream and prints it.

@@ -13,3 +13,6 @@ name = "lox"
 path = "src/bin/lox.rs"
 
 [dependencies]
+itertools = "0.9.0"
+rustyline = "6.1.2"
+structopt = "0.3.14"

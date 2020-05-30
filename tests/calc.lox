@@ -1,0 +1,8 @@
+fun add(a, b) {
+    return a + b;
+}
+
+var a = 42;
+var b = 13.37;
+
+print add(a, b);
